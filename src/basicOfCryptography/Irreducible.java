@@ -19,50 +19,48 @@ public class Irreducible {
 	}
 	
 	public void generateAllPossiblePolynomials(int p, int m){
-		//System.out.println(p + " " + m);
 		String[] database = new String[p];
 		for(int i=0; i<p;i++){
 			database[i] = Integer.toString(i);
 		}
 	    
-	    String[] resultWithoutReduction = getAllLists(database, m);
+	    String[] resultWithoutReduction = getAllLists(database, m+1);
 	    for(int j=0; j<resultWithoutReduction.length; j++){	
 	    	System.out.println("b " + resultWithoutReduction[j]);
 	    }
 	    ArrayList<String> resultWithFirstReduction = getAllPolynomialsWithAbsoluteTermAndMDegree(resultWithoutReduction);
-	    isDivisible("221", "012", p);
-	    /*int last = resultWithFirstReduction.size()-1;
-	    ArrayList<Integer> prime = findPrimeNumbersUsingSieveOfErasthenes(Integer.parseInt(resultWithFirstReduction.get(last)));
-	    for(int i=0;i<resultWithFirstReduction.size();i++)
-	    	if(prime.contains(Integer.parseInt(resultWithFirstReduction.get(i)))){
-	    		result.add(resultWithFirstReduction.get(i));
-	    		resultWithFirstReduction.remove(i);
-	    	}
+	        
 	    int counterOfIrreducible = 0;
+	    int counterInside = 0;
 	    for(int j=0; j<resultWithFirstReduction.size(); j++){	
-	    	//System.out.println("BASE: " + resultWithFirstReduction.get(j));
-	    	for(int k = 0;k<resultWithoutReduction.length;k++){
+	    	for(int k = 0;k < resultWithoutReduction.length; k++){
 		    	if(Integer.parseInt(resultWithoutReduction[k])<Integer.parseInt(resultWithFirstReduction.get(j))){
-		    		//if(Integer.parseInt(resultWithoutReduction[k])!=0 && Integer.parseInt(resultWithoutReduction[k])!=1){
-		    		if(resultWithoutReduction[k].charAt(0)!='0'){
-		    			if(isDivisible(resultWithFirstReduction.get(j), resultWithoutReduction[k], p))
+		    		if(Integer.parseInt(resultWithoutReduction[k])!=0 && Integer.parseInt(resultWithoutReduction[k])!=1){
+		    			counterInside++;
+		    			if(isDivisible(resultWithFirstReduction.get(j), resultWithoutReduction[k], p)){
+		    				counterInside = 0;
 		    				continue;
-		    			else{
-		    				counterOfIrreducible++;
-		    				//System.out.println(counterOfIrreducible);
-			    			if(counterOfIrreducible==(resultWithFirstReduction.size()-1)){
-			    				result.add(resultWithFirstReduction.get(j));
-			    				counterOfIrreducible=0;
-			    			}
 		    			}
-		    			//System.out.println("b" + resultWithoutReduction[k]);
+		    			else {
+		    				counterOfIrreducible++;
+		    			}
 		    		}
 		    			
 		    	}
 	    	}
+	    	if(counterOfIrreducible==counterInside){
+				result.add(resultWithFirstReduction.get(j));
+				counterOfIrreducible = 0;
+				counterInside = 0;
+			} else
+				counterOfIrreducible = 0;
+	    		counterInside = 0;
 	    }
 	    System.out.println("Irreducible: " + result);
-	*/}
+	}
+	public void division(String polynomial1, String polynomial2){
+		
+	}
 	
 	public static String[] getAllLists(String[] elements, int lengthOfList)
 	{
@@ -108,71 +106,82 @@ public class Irreducible {
 		return primeNumbers;
 	}
 	public boolean isDivisible(String polynomial1, String polynomial2, int p){
-		CalculationOfBigInteger calcFunc = new CalculationOfBigInteger();
-		//System.out.println("1: " + polynomial1);
-		//System.out.println("2: " + polynomial2);
-		int polynomial1StartingPosition = getStartingPosition(polynomial1);
-		int polynomial2StartingPosition = getStartingPosition(polynomial2);
-		
-		int multiplier=0;
-		//System.out.println("St "+ startingPostion);
+		int multiplier = 0;
+		int degreeAfterSubstraction = 0;
 		String afterMultiplication = "";
-		if(Character.getNumericValue(polynomial1.charAt(polynomial1StartingPosition))%Character.getNumericValue(polynomial2.charAt(polynomial2StartingPosition))!=0){
-			int inverse = Integer.parseInt(calcFunc.inverseBig(Character.toString(polynomial2.charAt(polynomial2StartingPosition)), Integer.toString(p)));
-			multiplier = (Character.getNumericValue(polynomial1.charAt(polynomial1StartingPosition))*inverse)%p;
-		} else {
-			multiplier = Character.getNumericValue(polynomial1.charAt(polynomial1StartingPosition))/Character.getNumericValue(polynomial2.charAt(polynomial2StartingPosition));
+		String afterSubtraction = "";
+		
+		polynomial2 = removeZerosFromBegin(polynomial2);
+		int degreeOfPolynomial2 = polynomial2.length();
+		
+		multiplier = calculateMultiplier(polynomial1, polynomial2, p);
+		
+		afterMultiplication = multiplicateByScalar(polynomial2, multiplier, p);
+		afterMultiplication = supplementByZerosIfNeed(afterMultiplication, polynomial1.length());
+		
+		afterSubtraction = substractPolynomials(polynomial1, afterMultiplication, p);
+		if(Integer.parseInt(afterSubtraction)!=0)
+			afterSubtraction = removeZerosFromBegin(afterSubtraction);
+		
+		degreeAfterSubstraction = afterSubtraction.length();
+		
+		if(Integer.parseInt(afterSubtraction) == 0)
+			return true;
+		else
+			if(degreeAfterSubstraction < degreeOfPolynomial2)
+				return false;
+			else
+				return isDivisible(afterSubtraction, polynomial2, p);
+	}
+	
+	public String supplementByZerosIfNeed(String polynomial, int length){
+		while(polynomial.length() < length){
+			polynomial += 0;
 		}
-		//System.out.println("Mu "+ startingPostion);
-		for(int i=0;i<polynomial2.length(); i++){
-			int result = (Character.getNumericValue(polynomial2.charAt(i))*multiplier)%p;
+		return polynomial;
+	}
+	
+	public String multiplicateByScalar(String polynomial, int multiplier, int p){
+		String afterMultiplication = "";
+		for(int i=0;i<polynomial.length(); i++){
+			int result = (Character.getNumericValue(polynomial.charAt(i))*multiplier)%p;
 			if(result==0) continue;
 			afterMultiplication += result;
 		}
-		
-		while(true){
-			if(getDegreeOfPolynomial(afterMultiplication)!= polynomial2.length()) 
-				afterMultiplication += 0;
-			else
-				break;
-		}
-		//System.out.println("Po 1" + afterMultiplication);
-		int counterOfZeros = 0;
-		while(true){
-			if(polynomial1.charAt(counterOfZeros)=='0'){
-				counterOfZeros++;
-			} else {
-				String polynomial1Memory = polynomial1;
-				polynomial1 = "";
-				for(int i=counterOfZeros;i<polynomial1Memory.length();i++){
-					polynomial1 += polynomial1Memory.charAt(i);
-				}
-				for(int i=0;i<afterMultiplication.length()-polynomial1.length();i++){
-					polynomial1 += 0;
-				}
-				break;
-			}
-		}
+		return afterMultiplication;
+	}
+	
+	public String substractPolynomials(String polynomial1, String afterMultiplication, int p){
 		String afterSubtraction = "";
-		for(int i=0; i<polynomial2.length();i++){
+		for(int i=0; i<polynomial1.length();i++){
 			int result = (Character.getNumericValue(polynomial1.charAt(i))-Character.getNumericValue(afterMultiplication.charAt(i)))%p;
 			if(result<0) result+=p;
 			afterSubtraction+=result;
 		}
-		//System.out.println("Po 2" + afterSubtraction);
-		int degreeAfterSubstraction = getDegreeOfPolynomial(afterSubtraction);
-		int degreeOfPolynomial2 = getDegreeOfPolynomial(polynomial2);
-		
-		if(Integer.parseInt(afterSubtraction)==0)
-			return true;
-		else
-			if(degreeAfterSubstraction<degreeOfPolynomial2)
-				return false;
-			else
-				isDivisible(afterSubtraction, polynomial2, p);
-		System.out.println("ERROR");
-		return true;
+		return afterSubtraction;
 	}
+	public String removeZerosFromBegin(String polynomial){
+		String result = "";
+		if(polynomial.charAt(0) == '0'){
+			for(int i=1;i<polynomial.length();i++){
+				result += polynomial.charAt(i);
+			}
+			return removeZerosFromBegin(result);
+		} else {
+			return polynomial;
+		}
+	}
+	
+	public int calculateMultiplier(String polynomial1, String polynomial2, int p){
+		CalculationOfBigInteger calcFunc = new CalculationOfBigInteger();
+		if(Character.getNumericValue(polynomial1.charAt(0))%Character.getNumericValue(polynomial2.charAt(0))!=0){
+			int inverse = Integer.parseInt(calcFunc.inverseBig(Character.toString(polynomial2.charAt(0)), Integer.toString(p)));
+			return (Character.getNumericValue(polynomial1.charAt(0))*inverse)%p;
+		} else {
+			return Character.getNumericValue(polynomial1.charAt(0))/Character.getNumericValue(polynomial2.charAt(0));
+		}
+	}
+	
 	public int getDegreeOfPolynomial(String polynomial){
 		int countZero = 0;
 		for(int i = 0; i<polynomial.length(); i++){
